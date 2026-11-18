@@ -23,24 +23,46 @@ class TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = context.read<FinanceProvider>();
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final isIncome = t.type == TxType.income;
-    final color = isIncome ? AppColors.income : AppColors.expense;
+    final isTransfer = t.type == TxType.transfer;
+    final color = isIncome
+        ? AppColors.income
+        : isTransfer
+        ? scheme.primary
+        : AppColors.expense;
     final category = f.categoryName(t.categoryId);
-    final sign = isIncome ? '+' : '−';
-    final parts = [
-      category,
-      f.accountName(t.accountId),
+    final sign = isIncome
+        ? '+'
+        : isTransfer
+        ? ''
+        : '−';
+    final title = isTransfer
+        ? 'Transfer'
+        : t.note.isEmpty
+        ? category
+        : t.note;
+    final parts = <String>[
+      if (isTransfer)
+        '${f.accountName(t.accountId)} → ${f.accountName(t.toAccountId)}'
+      else ...[
+        category,
+        f.accountName(t.accountId),
+      ],
       if (showDate) tanggal(t.date),
     ];
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: AppColors.surface,
+        color: scheme.surface,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(
+            color: dark ? const Color(0xFF394757) : AppColors.border,
+          ),
         ),
         child: InkWell(
           onTap: onTap,
@@ -55,12 +77,16 @@ class TransactionTile extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isIncome
                         ? AppColors.incomeTint
+                        : isTransfer
+                        ? AppColors.tealTint
                         : AppColors.expenseTint,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     isIncome
                         ? Icons.arrow_downward_rounded
+                        : isTransfer
+                        ? Icons.swap_horiz_rounded
                         : Icons.arrow_upward_rounded,
                     color: color,
                     size: 20,
@@ -72,7 +98,7 @@ class TransactionTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        t.note.isEmpty ? category : t.note,
+                        title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.w600),
@@ -82,8 +108,8 @@ class TransactionTile extends StatelessWidget {
                         parts.join(' · '),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
                           fontSize: 12.5,
                         ),
                       ),

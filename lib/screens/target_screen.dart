@@ -30,27 +30,28 @@ class TargetScreen extends StatelessWidget {
       ),
       body: f.goals.isEmpty
           ? const EmptyState(
-        icon: Icons.flag_outlined,
-        title: 'Belum ada target',
-        message: 'Buat target, misalnya laptop baru atau dana darurat, '
-            'lalu setor sedikit demi sedikit. Tekan + di kanan atas.',
-      )
+              icon: Icons.flag_outlined,
+              title: 'Belum ada target',
+              message:
+                  'Buat target, misalnya laptop baru atau dana darurat, '
+                  'lalu setor sedikit demi sedikit. Tekan + di kanan atas.',
+            )
           : ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        children: [
-          for (final g in f.goals)
-            GoalCard(
-              goal: g,
-              saved: f.savedFor(g.id!),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => GoalDetailScreen(goalId: g.id!),
-                ),
-              ),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+              children: [
+                for (final g in f.goals)
+                  GoalCard(
+                    goal: g,
+                    saved: f.savedFor(g.id!),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => GoalDetailScreen(goalId: g.id!),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-        ],
-      ),
     );
   }
 }

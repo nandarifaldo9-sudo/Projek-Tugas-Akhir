@@ -6,6 +6,7 @@ import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/list_card.dart';
+import '../widgets/undo_snack_bar.dart';
 
 class CategoriesScreen extends StatelessWidget {
   const CategoriesScreen({super.key});
@@ -24,6 +25,12 @@ class CategoriesScreen extends StatelessWidget {
     final error = await f.deleteCategory(c);
     if (error != null) {
       messenger.showSnackBar(SnackBar(content: Text(error)));
+    } else {
+      showUndoSnackBar(
+        messenger,
+        message: 'Kategori dihapus.',
+        onUndo: () => f.restoreCategory(c),
+      );
     }
   }
 
@@ -35,12 +42,13 @@ class CategoriesScreen extends StatelessWidget {
   }
 
   Widget _section(
-      BuildContext context,
-      FinanceProvider f,
-      String title,
-      TxType type,
-      ) {
+    BuildContext context,
+    FinanceProvider f,
+    String title,
+    TxType type,
+  ) {
     final isIncome = type == TxType.income;
+    final scheme = Theme.of(context).colorScheme;
     final items = f.categories.where((c) => c.type == type).toList();
 
     return Column(
@@ -50,8 +58,8 @@ class CategoriesScreen extends StatelessWidget {
           padding: const EdgeInsets.only(top: 12, bottom: 8),
           child: Text(
             title,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: scheme.onSurfaceVariant,
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -119,6 +127,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   late final TextEditingController _nameCtrl;
   TxType _type = TxType.expense;
   String? _error;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -135,21 +144,25 @@ class _CategoryDialogState extends State<_CategoryDialog> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_saving || !_formKey.currentState!.validate()) return;
 
     final provider = context.read<FinanceProvider>();
     final navigator = Navigator.of(context);
-
-    final error = await provider.saveCategory(
-      Category(
-        id: widget.existing?.id,
-        name: _nameCtrl.text.trim(),
-        type: _type,
-      ),
-    );
-
+    setState(() => _saving = true);
+    String? error;
+    try {
+      error = await provider.saveCategory(
+        Category(
+          id: widget.existing?.id,
+          name: _nameCtrl.text.trim(),
+          type: _type,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+    if (!mounted) return;
     if (error != null) {
-      if (!mounted) return;
       setState(() => _error = error);
       return;
     }
@@ -173,14 +186,13 @@ class _CategoryDialogState extends State<_CategoryDialog> {
                 SegmentedButton<TxType>(
                   showSelectedIcon: false,
                   segments: const [
-                    ButtonSegment(
-                      value: TxType.expense,
-                      label: Text('Keluar'),
-                    ),
+                    ButtonSegment(value: TxType.expense, label: Text('Keluar')),
                     ButtonSegment(value: TxType.income, label: Text('Masuk')),
                   ],
                   selected: {_type},
-                  onSelectionChanged: (s) => setState(() => _type = s.first),
+                  onSelectionChanged: _saving
+                      ? null
+                      : (s) => setState(() => _type = s.first),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -194,10 +206,7 @@ class _CategoryDialogState extends State<_CategoryDialog> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                  _error!,
-                  style: const TextStyle(color: AppColors.expense),
-                ),
+                Text(_error!, style: const TextStyle(color: AppColors.expense)),
               ],
             ],
           ),
@@ -205,16 +214,16 @@ class _CategoryDialogState extends State<_CategoryDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _saving ? null : () => Navigator.pop(context),
           child: const Text('Batal'),
         ),
         FilledButton(
-          onPressed: _save,
+          onPressed: _saving ? null : _save,
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.teal,
             foregroundColor: AppColors.navy,
           ),
-          child: const Text('Simpan'),
+          child: Text(_saving ? 'Menyimpan...' : 'Simpan'),
         ),
       ],
     );

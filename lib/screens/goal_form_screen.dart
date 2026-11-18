@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/models.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/date_picker.dart';
 import '../utils/format.dart';
+import '../widgets/amount_form_field.dart';
 import '../widgets/primary_button.dart';
 
 class GoalFormScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _GoalFormScreenState extends State<GoalFormScreen> {
   final _nameCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
   DateTime? _targetDate;
+  bool _saving = false;
 
   bool get _isEdit => widget.existing != null;
 
@@ -46,31 +48,35 @@ class _GoalFormScreenState extends State<GoalFormScreen> {
 
   Future<void> _pickDate() async {
     final initialDate = _targetDate ?? DateTime.now();
-    final earliest = DateTime(2020);
-    final latest = DateTime(2100);
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: initialDate.isBefore(earliest) ? initialDate : earliest,
-      lastDate: initialDate.isAfter(latest) ? initialDate : latest,
-    );
+    final picked = await pilihTanggal(context, initialDate);
     if (picked != null) setState(() => _targetDate = picked);
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_saving || !_formKey.currentState!.validate()) return;
 
     final provider = context.read<FinanceProvider>();
     final navigator = Navigator.of(context);
-
-    await provider.saveGoal(
-      Goal(
-        id: widget.existing?.id,
-        name: _nameCtrl.text.trim(),
-        targetAmount: int.parse(_amountCtrl.text),
-        targetDate: _targetDate,
-      ),
-    );
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _saving = true);
+    String? error;
+    try {
+      error = await provider.saveGoal(
+        Goal(
+          id: widget.existing?.id,
+          name: _nameCtrl.text.trim(),
+          targetAmount: int.parse(_amountCtrl.text),
+          targetDate: _targetDate,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+    if (!mounted) return;
+    if (error != null) {
+      messenger.showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
     navigator.pop();
   }
 
@@ -92,20 +98,7 @@ class _GoalFormScreenState extends State<GoalFormScreen> {
                   : null,
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _amountCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(12),
-              ],
-              decoration: appInput('Nominal target', prefixText: 'Rp '),
-              validator: (v) {
-                final n = int.tryParse(v ?? '');
-                if (n == null || n <= 0) return 'Nominal harus lebih dari 0';
-                return null;
-              },
-            ),
+            AmountFormField(controller: _amountCtrl, label: 'Nominal target'),
             const SizedBox(height: 16),
             InkWell(
               onTap: _pickDate,
@@ -129,7 +122,10 @@ class _GoalFormScreenState extends State<GoalFormScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            PrimaryButton(label: 'Simpan', onPressed: _save),
+            PrimaryButton(
+              label: _saving ? 'Menyimpan...' : 'Simpan',
+              onPressed: _saving ? null : _save,
+            ),
           ],
         ),
       ),

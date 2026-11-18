@@ -35,6 +35,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = context.watch<FinanceProvider>();
+    final scheme = Theme.of(context).colorScheme;
 
     Widget body;
     if (f.loading) {
@@ -50,13 +51,27 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
         children: [
           Text(
-            _greeting(),
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+            '${_greeting()},',
+            style: TextStyle(
+              color: scheme.onSurfaceVariant,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
+            'Ringkasan keuangan',
+            style: TextStyle(
+              color: scheme.onSurface,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
             tanggalLengkap(DateTime.now()),
-            style: const TextStyle(color: AppColors.textSecondary),
+            style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
           ),
           const SizedBox(height: 16),
           BalanceCard(
@@ -97,10 +112,7 @@ class HomeScreen extends StatelessWidget {
                 'Transaksi terbaru',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
-              TextButton(
-                onPressed: onSeeAll,
-                child: const Text('Lihat semua'),
-              ),
+              TextButton(onPressed: onSeeAll, child: const Text('Lihat semua')),
             ],
           ),
           const SizedBox(height: 4),
@@ -108,7 +120,8 @@ class HomeScreen extends StatelessWidget {
             const EmptyState(
               icon: Icons.receipt_long_outlined,
               title: 'Belum ada transaksi',
-              message: 'Tekan tombol + untuk mencatat pemasukan atau '
+              message:
+                  'Tekan tombol + untuk mencatat pemasukan atau '
                   'pengeluaran pertamamu.',
             ),
           for (final t in f.transactions.take(5))

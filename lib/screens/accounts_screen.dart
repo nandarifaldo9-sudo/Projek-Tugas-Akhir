@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/models.dart';
@@ -7,7 +6,9 @@ import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/format.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/amount_form_field.dart';
 import '../widgets/list_card.dart';
+import '../widgets/undo_snack_bar.dart';
 
 class AccountsScreen extends StatelessWidget {
   const AccountsScreen({super.key});
@@ -26,6 +27,12 @@ class AccountsScreen extends StatelessWidget {
     final error = await f.deleteAccount(a.id!);
     if (error != null) {
       messenger.showSnackBar(SnackBar(content: Text(error)));
+    } else {
+      showUndoSnackBar(
+        messenger,
+        message: 'Akun dihapus.',
+        onUndo: () => f.restoreAccount(a),
+      );
     }
   }
 
@@ -39,6 +46,7 @@ class AccountsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = context.watch<FinanceProvider>();
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
@@ -71,12 +79,16 @@ class AccountsScreen extends StatelessWidget {
               ),
               onTap: () => _openDialog(context, a),
             ),
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
             child: Text(
               'Saldo dihitung otomatis: saldo awal ditambah pemasukan, '
-                  'dikurangi pengeluaran dan setoran target.',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+              'ditambah/dikurangi transfer antar akun, lalu dikurangi '
+              'pengeluaran dan pergerakan dana target.',
+              style: TextStyle(
+                color: scheme.onSurfaceVariant,
+                fontSize: 12.5,
+              ),
             ),
           ),
         ],
@@ -99,6 +111,7 @@ class _AccountDialogState extends State<_AccountDialog> {
   late final TextEditingController _nameCtrl;
   late final TextEditingController _balanceCtrl;
   String? _error;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -120,21 +133,25 @@ class _AccountDialogState extends State<_AccountDialog> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_saving || !_formKey.currentState!.validate()) return;
 
     final provider = context.read<FinanceProvider>();
     final navigator = Navigator.of(context);
-
-    final error = await provider.saveAccount(
-      Account(
-        id: widget.existing?.id,
-        name: _nameCtrl.text.trim(),
-        initialBalance: int.tryParse(_balanceCtrl.text) ?? 0,
-      ),
-    );
-
+    setState(() => _saving = true);
+    String? error;
+    try {
+      error = await provider.saveAccount(
+        Account(
+          id: widget.existing?.id,
+          name: _nameCtrl.text.trim(),
+          initialBalance: int.tryParse(_balanceCtrl.text) ?? 0,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+    if (!mounted) return;
     if (error != null) {
-      if (!mounted) return;
       setState(() => _error = error);
       return;
     }
@@ -162,21 +179,14 @@ class _AccountDialogState extends State<_AccountDialog> {
                     : null,
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              AmountFormField(
                 controller: _balanceCtrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  LengthLimitingTextInputFormatter(12),
-                ],
-                decoration: appInput('Saldo awal (opsional)', prefixText: 'Rp '),
+                label: 'Saldo awal (opsional)',
+                allowEmpty: true,
               ),
               if (_error != null) ...[
                 const SizedBox(height: 8),
-                Text(
-                  _error!,
-                  style: const TextStyle(color: AppColors.expense),
-                ),
+                Text(_error!, style: const TextStyle(color: AppColors.expense)),
               ],
             ],
           ),
@@ -184,16 +194,16 @@ class _AccountDialogState extends State<_AccountDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _saving ? null : () => Navigator.pop(context),
           child: const Text('Batal'),
         ),
         FilledButton(
-          onPressed: _save,
+          onPressed: _saving ? null : _save,
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.teal,
             foregroundColor: AppColors.navy,
           ),
-          child: const Text('Simpan'),
+          child: Text(_saving ? 'Menyimpan...' : 'Simpan'),
         ),
       ],
     );

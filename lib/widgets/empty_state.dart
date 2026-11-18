@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_theme.dart';
-
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
@@ -16,6 +14,7 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -25,11 +24,11 @@ class EmptyState extends StatelessWidget {
             Container(
               width: 72,
               height: 72,
-              decoration: const BoxDecoration(
-                color: AppColors.tealTint,
+              decoration: BoxDecoration(
+                color: scheme.secondaryContainer,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: AppColors.navy, size: 32),
+              child: Icon(icon, color: scheme.onSecondaryContainer, size: 32),
             ),
             const SizedBox(height: 16),
             Text(
@@ -42,7 +41,7 @@ class EmptyState extends StatelessWidget {
               Text(
                 message!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.textSecondary),
+                style: TextStyle(color: scheme.onSurfaceVariant),
               ),
             ],
           ],

@@ -36,11 +36,13 @@ class _ReportScreenState extends State<ReportScreen> {
   @override
   Widget build(BuildContext context) {
     final f = context.watch<FinanceProvider>();
+    final scheme = Theme.of(context).colorScheme;
     final month = _month;
 
     final entries = f.expenseByCategory(month).entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final totalExpense = entries.fold<int>(0, (s, e) => s + e.value);
+    final trendData = f.monthlyTotals(month);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Laporan')),
@@ -107,12 +109,12 @@ class _ReportScreenState extends State<ReportScreen> {
                 ),
                 const SizedBox(height: 16),
                 if (entries.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 24),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Center(
                       child: Text(
                         'Belum ada pengeluaran di bulan ini.',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: scheme.onSurfaceVariant),
                       ),
                     ),
                   )
@@ -120,16 +122,20 @@ class _ReportScreenState extends State<ReportScreen> {
                   Center(
                     child: DonutChart(
                       values: [for (final e in entries) e.value],
+                      semanticLabel:
+                          'Pengeluaran per kategori. '
+                          '${entries.map((e) => '${f.categoryName(e.key)} ${rupiah(e.value)}').join(', ')}. '
+                          'Total ${rupiah(totalExpense)}.',
                       center: SizedBox(
                         width: 90,
                         child: FittedBox(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
+                              Text(
                                 'Keluar',
                                 style: TextStyle(
-                                  color: AppColors.textSecondary,
+                                  color: scheme.onSurfaceVariant,
                                   fontSize: 12,
                                 ),
                               ),
@@ -168,7 +174,14 @@ class _ReportScreenState extends State<ReportScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 16),
-                TrendBarChart(data: f.monthlyTotals(month)),
+                Semantics(
+                  container: true,
+                  excludeSemantics: true,
+                  label:
+                      'Tren pemasukan dan pengeluaran enam bulan. '
+                      '${trendData.map((m) => '${bulanTahun(m.month)}: masuk ${rupiah(m.income)}, keluar ${rupiah(m.expense)}').join('; ')}.',
+                  child: TrendBarChart(data: trendData),
+                ),
               ],
             ),
           ),
@@ -218,7 +231,9 @@ class _LegendRow extends StatelessWidget {
             child: Text(
               pctText,
               textAlign: TextAlign.right,
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],

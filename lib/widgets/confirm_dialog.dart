@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 Future<bool> confirmAction(
-    BuildContext context, {
-      required String title,
-      required String message,
-      String confirmLabel = 'Hapus',
-    }) async {
+  BuildContext context, {
+  required String title,
+  required String message,
+  String confirmLabel = 'Hapus',
+}) async {
   final ok = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(

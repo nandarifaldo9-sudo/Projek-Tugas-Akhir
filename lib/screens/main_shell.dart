@@ -70,6 +70,16 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final finance = context.watch<FinanceProvider>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final alerts = finance.takeBudgetAlerts();
+      if (alerts.isEmpty) return;
+      final names = alerts.map(finance.categoryName).join(', ');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Pengeluaran mencapai 80% anggaran: $names')),
+      );
+    });
     final screens = <Widget>[
       HomeScreen(onSeeAll: () => setState(() => _index = 1)),
       const TransactionsScreen(),
@@ -80,11 +90,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
 
     return Scaffold(
       body: IndexedStack(index: _index, children: screens),
-      // Tombol + hanya di Beranda dan Transaksi.
       floatingActionButton: _index <= 1
           ? FloatingActionButton(
               onPressed: _openAddForm,
               tooltip: 'Tambah transaksi',
+              heroTag: 'add_transaction',
               child: const Icon(Icons.add),
             )
           : null,

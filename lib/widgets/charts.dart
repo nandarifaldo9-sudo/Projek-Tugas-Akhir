@@ -24,27 +24,33 @@ class DonutChart extends StatelessWidget {
     required this.values,
     this.size = 170,
     this.center,
+    this.semanticLabel,
   });
 
   final List<int> values;
   final double size;
   final Widget? center;
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    final chart = SizedBox(
       width: size,
       height: size,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          CustomPaint(
-            size: Size.square(size),
-            painter: _DonutPainter(values),
-          ),
+          CustomPaint(size: Size.square(size), painter: _DonutPainter(values)),
           ?center,
         ],
       ),
+    );
+    if (semanticLabel == null) return chart;
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: semanticLabel,
+      child: chart,
     );
   }
 }
@@ -80,7 +86,13 @@ class _DonutPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _DonutPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _DonutPainter oldDelegate) {
+    if (values.length != oldDelegate.values.length) return true;
+    for (var i = 0; i < values.length; i++) {
+      if (values[i] != oldDelegate.values[i]) return true;
+    }
+    return false;
+  }
 }
 
 /// Diagram batang: pemasukan (hijau) dan pengeluaran (merah) per bulan.
@@ -135,8 +147,8 @@ class TrendBarChart extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         color: i == data.length - 1
-                            ? AppColors.navy
-                            : AppColors.textSecondary,
+                            ? Theme.of(context).colorScheme.onSurface
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: i == data.length - 1
                             ? FontWeight.w700
                             : FontWeight.w400,
@@ -159,8 +171,8 @@ class TrendBarChart extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             'Batang tertinggi: ${rupiah(maxValue)}',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
             ),
           ),

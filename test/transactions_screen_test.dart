@@ -20,16 +20,16 @@ void main() {
     final now = DateTime.now();
     final currentMonth = DateTime(now.year, now.month, 1);
     final previousMonth = DateTime(now.year, now.month - 1, 15);
-    final finance = FinanceProvider()
-      ..accounts = const [
+    final finance = _TestFinanceProvider(
+      testAccounts: const [
         Account(id: 1, name: 'Tunai'),
         Account(id: 2, name: 'Bank'),
-      ]
-      ..categories = const [
+      ],
+      testCategories: const [
         Category(id: 1, name: 'Makanan', type: TxType.expense),
         Category(id: 2, name: 'Gaji', type: TxType.income),
-      ]
-      ..transactions = [
+      ],
+      testTransactions: [
         AppTransaction(
           type: TxType.expense,
           amount: 10000,
@@ -62,11 +62,12 @@ void main() {
           date: previousMonth,
           note: 'Belanja bulan lalu',
         ),
-      ];
+      ],
+    );
     addTearDown(finance.dispose);
 
     await tester.pumpWidget(
-      ChangeNotifierProvider.value(
+      ChangeNotifierProvider<FinanceProvider>.value(
         value: finance,
         child: const MaterialApp(home: TransactionsScreen()),
       ),
@@ -103,4 +104,41 @@ void main() {
     expect(find.text('Belanja bulan lalu'), findsOneWidget);
     expect(find.text('3'), findsNothing);
   });
+}
+
+class _TestFinanceProvider extends FinanceProvider {
+  _TestFinanceProvider({
+    required this.testAccounts,
+    required this.testCategories,
+    required this.testTransactions,
+  });
+
+  final List<Account> testAccounts;
+  final List<Category> testCategories;
+  final List<AppTransaction> testTransactions;
+
+  @override
+  List<Account> get accounts => testAccounts;
+
+  @override
+  List<Category> get categories => testCategories;
+
+  @override
+  List<AppTransaction> get transactions => testTransactions;
+
+  @override
+  String accountName(int? id) {
+    for (final account in testAccounts) {
+      if (account.id == id) return account.name;
+    }
+    return '-';
+  }
+
+  @override
+  String categoryName(int? id) {
+    for (final category in testCategories) {
+      if (category.id == id) return category.name;
+    }
+    return '-';
+  }
 }

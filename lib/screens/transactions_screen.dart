@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../utils/format.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/transaction_tile.dart';
+import '../widgets/undo_snack_bar.dart';
 import 'add_transaction_screen.dart';
 
 class TransactionsScreen extends StatefulWidget {
@@ -30,6 +31,25 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
+  Future<void> _deleteTransaction(
+    FinanceProvider finance,
+    AppTransaction transaction,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    if (!await confirmDelete(context) || !mounted) return;
+    final error = await finance.deleteTransaction(transaction.id!);
+    if (!mounted) return;
+    if (error != null) {
+      messenger.showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
+    showUndoSnackBar(
+      messenger,
+      message: 'Transaksi dihapus.',
+      onUndo: () => finance.addTransaction(transaction),
+    );
+  }
+
   Future<void> _openFilters(FinanceProvider finance) async {
     var dateRange = _dateRange;
     var accountId = finance.accounts.any((a) => a.id == _accountId)
@@ -43,7 +63,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -68,7 +88,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                           'Filter transaksi',
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(
-                                color: AppColors.navy,
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontWeight: FontWeight.w700,
                               ),
                         ),
@@ -81,10 +101,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Tanggal',
                     style: TextStyle(
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -95,9 +115,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.navy,
+                            foregroundColor: Theme.of(context)
+                                .colorScheme
+                                .onSurface,
                             minimumSize: const Size.fromHeight(48),
-                            side: const BorderSide(color: AppColors.border),
+                            side: BorderSide(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outlineVariant,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -123,9 +149,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       Expanded(
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.navy,
+                            foregroundColor: Theme.of(context)
+                                .colorScheme
+                                .onSurface,
                             minimumSize: const Size.fromHeight(48),
-                            side: const BorderSide(color: AppColors.border),
+                            side: BorderSide(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outlineVariant,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -158,9 +190,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: Theme.of(context).colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -186,8 +220,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                                       '${tanggal(dateRange!.end)}',
                             style: TextStyle(
                               color: dateRange == null
-                                  ? AppColors.textSecondary
-                                  : AppColors.navy,
+                                  ? Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant
+                                  : Theme.of(context).colorScheme.onSurface,
                               fontSize: 13,
                               fontWeight: dateRange == null
                                   ? FontWeight.w400
@@ -205,10 +241,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             tooltip: 'Hapus rentang tanggal',
                             onPressed: () =>
                                 setSheetState(() => dateRange = null),
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.close_rounded,
                               size: 20,
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
                             ),
                           ),
                       ],
@@ -318,15 +356,24 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   Widget _chip(String label, TxType? value) {
     final selected = _filter == value;
+    final scheme = Theme.of(context).colorScheme;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return ChoiceChip(
-      label: Text(label),
+      label: SizedBox(
+        width: double.infinity,
+        child: Center(child: Text(label)),
+      ),
       selected: selected,
       showCheckmark: false,
-      selectedColor: AppColors.navy,
-      backgroundColor: AppColors.surface,
-      side: const BorderSide(color: AppColors.border),
+      labelPadding: EdgeInsets.zero,
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      selectedColor: scheme.primary,
+      backgroundColor: scheme.surface,
+      side: BorderSide(
+        color: dark ? const Color(0xFF394757) : AppColors.border,
+      ),
       labelStyle: TextStyle(
-        color: selected ? Colors.white : AppColors.navy,
+        color: selected ? scheme.onPrimary : scheme.onSurface,
         fontWeight: FontWeight.w600,
       ),
       onSelected: (_) => setState(() => _filter = value),
@@ -336,6 +383,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final f = context.watch<FinanceProvider>();
+    final scheme = Theme.of(context).colorScheme;
     final q = _query.trim().toLowerCase();
     final accountId = f.accounts.any((a) => a.id == _accountId)
         ? _accountId
@@ -371,39 +419,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       return true;
     }).toList();
 
-    // Daftar dikelompokkan per tanggal (data sudah urut dari terbaru).
-    final items = <Widget>[];
-    DateTime? lastDate;
-    for (final t in list) {
-      if (lastDate == null || lastDate != t.date) {
-        lastDate = t.date;
-        items.add(
-          Padding(
-            padding: const EdgeInsets.only(top: 12, bottom: 8),
-            child: Text(
-              tanggal(t.date),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        );
-      }
-      items.add(
-        TransactionTile(
-          t: t,
-          onTap: () => _openForm(t),
-          onLongPress: () async {
-            if (await confirmDelete(context)) {
-              await f.deleteTransaction(t.id!);
-            }
-          },
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Transaksi'),
@@ -413,7 +428,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             onPressed: () => _openFilters(f),
             icon: Badge(
               backgroundColor: AppColors.teal,
-              textColor: AppColors.navy,
+              textColor: scheme.onSecondary,
               isLabelVisible: activeFilterCount > 0,
               label: Text('$activeFilterCount'),
               child: const Icon(Icons.tune),
@@ -436,16 +451,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Wrap(
-                spacing: 8,
-                children: [
-                  _chip('Semua', null),
-                  _chip('Keluar', TxType.expense),
-                  _chip('Masuk', TxType.income),
-                ],
-              ),
+            child: Row(
+              children: [
+                Expanded(child: _chip('Semua', null)),
+                const SizedBox(width: 8),
+                Expanded(child: _chip('Keluar', TxType.expense)),
+                const SizedBox(width: 8),
+                Expanded(child: _chip('Masuk', TxType.income)),
+                const SizedBox(width: 8),
+                Expanded(child: _chip('Transfer', TxType.transfer)),
+              ],
             ),
           ),
           Expanded(
@@ -459,9 +474,41 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                         ? 'Tekan tombol + untuk mencatat transaksi.'
                         : 'Coba ubah kata kunci atau filter.',
                   )
-                : ListView(
+                : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-                    children: items,
+                    itemCount: list.length,
+                    itemBuilder: (context, index) {
+                      final transaction = list[index];
+                      final showDate =
+                          index == 0 ||
+                          list[index - 1].date != transaction.date;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (showDate)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: 12,
+                                bottom: 8,
+                              ),
+                              child: Text(
+                                tanggal(transaction.date),
+                                style: TextStyle(
+                                  color: scheme.onSurfaceVariant,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          TransactionTile(
+                            t: transaction,
+                            onTap: () => _openForm(transaction),
+                            onLongPress: () =>
+                                _deleteTransaction(f, transaction),
+                          ),
+                        ],
+                      );
+                    },
                   ),
           ),
         ],

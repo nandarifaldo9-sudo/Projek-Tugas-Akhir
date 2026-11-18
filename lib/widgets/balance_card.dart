@@ -12,15 +12,41 @@ class BalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardColor = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF243C58)
+        : AppColors.navy;
     return AppCard(
-      color: AppColors.navy,
+      color: cardColor,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Total saldo',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Total saldo',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Color(0x22FFFFFF),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: Colors.white,
+                  size: 19,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           FittedBox(

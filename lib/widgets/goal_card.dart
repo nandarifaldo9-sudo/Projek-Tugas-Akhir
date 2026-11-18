@@ -20,7 +20,7 @@ class GoalProgressBar extends StatelessWidget {
       child: LinearProgressIndicator(
         value: value.clamp(0.0, 1.0).toDouble(),
         minHeight: 10,
-        backgroundColor: AppColors.border,
+        backgroundColor: Theme.of(context).colorScheme.outlineVariant,
         color: value >= 1 ? AppColors.income : AppColors.teal,
       ),
     );
@@ -87,8 +87,8 @@ class GoalCard extends StatelessWidget {
                   ),
                   Text(
                     'dari ${rupiah(goal.targetAmount)}',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 13,
                     ),
                   ),
@@ -99,7 +99,7 @@ class GoalCard extends StatelessWidget {
                 remaining > 0 ? 'Sisa ${rupiah(remaining)}' : 'Target tercapai',
                 style: TextStyle(
                   color: remaining > 0
-                      ? AppColors.textSecondary
+                      ? Theme.of(context).colorScheme.onSurfaceVariant
                       : AppColors.income,
                   fontSize: 12.5,
                   fontWeight: remaining > 0 ? FontWeight.w400 : FontWeight.w600,
@@ -110,8 +110,8 @@ class GoalCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(
                     'Target ${tanggal(goal.targetDate!)}',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 12.5,
                     ),
                   ),

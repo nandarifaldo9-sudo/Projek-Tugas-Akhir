@@ -1,7 +1,27 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val releaseKeyPropertiesFile = rootProject.file("key.properties")
+val releaseKeyProperties = Properties()
+if (releaseKeyPropertiesFile.exists()) {
+    releaseKeyPropertiesFile.inputStream().use(releaseKeyProperties::load)
+    val requiredProperties = listOf(
+        "keyAlias",
+        "keyPassword",
+        "storeFile",
+        "storePassword",
+    )
+    val missingProperties = requiredProperties.filter {
+        releaseKeyProperties.getProperty(it).isNullOrBlank()
+    }
+    require(missingProperties.isEmpty()) {
+        "android/key.properties is missing: ${missingProperties.joinToString()}"
+    }
 }
 
 android {
@@ -15,7 +35,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Replace the sample ID with a unique ID before publishing.
         applicationId = "com.example.projek_tugas_akhir"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -31,9 +51,16 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (releaseKeyPropertiesFile.exists()) {
+                signingConfig = signingConfigs.create("release") {
+                    keyAlias = releaseKeyProperties.getProperty("keyAlias")
+                    keyPassword = releaseKeyProperties.getProperty("keyPassword")
+                    storeFile = rootProject.file(
+                        releaseKeyProperties.getProperty("storeFile"),
+                    )
+                    storePassword = releaseKeyProperties.getProperty("storePassword")
+                }
+            }
         }
     }
 }
