@@ -36,7 +36,12 @@ class FinanceProvider extends ChangeNotifier {
   String? error;
 
   Future<void> load() async {
-    await _db.materializeDueRecurring(DateTime.now());
+    String? recurringError;
+    try {
+      await _db.materializeDueRecurring(DateTime.now());
+    } on DatabaseException {
+      recurringError = 'Gagal memproses transaksi berulang.';
+    }
     await _refresh(
       accounts: true,
       categories: true,
@@ -47,6 +52,10 @@ class FinanceProvider extends ChangeNotifier {
       budgets: true,
       recurringRules: true,
     );
+    if (recurringError != null && error == null) {
+      error = recurringError;
+      notifyListeners();
+    }
     await _checkBudgetWarnings();
   }
 
@@ -154,7 +163,12 @@ class FinanceProvider extends ChangeNotifier {
     final transactions = _transactions
         .where((transaction) => transaction.id != transactionId)
         .toList();
-    return FinanceService.accountBalance(account, transactions, _deposits);
+    return FinanceService.accountBalance(
+      account,
+      transactions,
+      _deposits,
+      withdrawals: _withdrawals,
+    );
   }
 
   // ---------- Akun (mengembalikan pesan error, atau null bila berhasil) ----------
@@ -509,10 +523,7 @@ class FinanceProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<String?> toggleRecurringRule(
-    RecurringRule rule,
-    bool enabled,
-  ) async {
+  Future<String?> toggleRecurringRule(RecurringRule rule, bool enabled) async {
     try {
       await _db.saveRecurringRule(
         RecurringRule(
@@ -566,6 +577,7 @@ class FinanceProvider extends ChangeNotifier {
     final date = goal.targetDate;
     if (date == null) return 0;
     final today = from ?? DateTime.now();
+    if (date.isBefore(DateTime(today.year, today.month, today.day))) return 0;
     final months = (date.year - today.year) * 12 + date.month - today.month + 1;
     if (months <= 0) return 0;
     final remaining = goal.targetAmount - savedFor(goal.id!);

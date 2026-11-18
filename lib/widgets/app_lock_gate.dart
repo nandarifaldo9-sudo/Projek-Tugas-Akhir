@@ -95,8 +95,13 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   }
 
   Future<void> _disableUnavailableLock() async {
-    await context.read<AppSettings>().setAppLockEnabled(false);
-    if (mounted) setState(() => _locked = false);
+    final saved = await context.read<AppSettings>().setAppLockEnabled(false);
+    if (!mounted) return;
+    if (!saved) {
+      setState(() => _error = 'Pengaturan kunci gagal disimpan.');
+      return;
+    }
+    setState(() => _locked = false);
   }
 
   @override

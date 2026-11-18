@@ -375,6 +375,8 @@ class BackupService {
       return await finance.saveRecurringRule(rule) == null;
     } on FormatException {
       return false;
+    } on ArgumentError {
+      return false;
     } on TypeError {
       return false;
     }

@@ -32,7 +32,12 @@ class SettingsScreen extends StatelessWidget {
         return;
       }
     }
-    await settings.setAppLockEnabled(enabled);
+    final saved = await settings.setAppLockEnabled(enabled);
+    if (!saved && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pengaturan kunci gagal disimpan.')),
+      );
+    }
   }
 
   @override

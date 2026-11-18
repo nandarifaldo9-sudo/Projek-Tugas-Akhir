@@ -34,9 +34,11 @@ class AppSettings extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setAppLockEnabled(bool enabled) async {
+  Future<bool> setAppLockEnabled(bool enabled) async {
+    final saved = await _preferences.setBool(_lockKey, enabled);
+    if (!saved) return false;
     _appLockEnabled = enabled;
-    await _preferences.setBool(_lockKey, enabled);
     notifyListeners();
+    return true;
   }
 }

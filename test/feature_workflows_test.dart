@@ -79,6 +79,32 @@ void main() {
     );
   });
 
+  test(
+    'database errors processing recurring transactions are surfaced',
+    () async {
+      final failingPath = path.join(
+        await factory.getDatabasesPath(),
+        'flowly_failing_recurring_${DateTime.now().microsecondsSinceEpoch}.db',
+      );
+      final failingProvider = FinanceProvider(
+        database: _FailingRecurringDatabase(
+          factory: factory,
+          databasePath: failingPath,
+        ),
+      );
+      addTearDown(() async {
+        failingProvider.dispose();
+        await factory.deleteDatabase(failingPath);
+      });
+
+      await failingProvider.load();
+
+      expect(failingProvider.loading, isFalse);
+      expect(failingProvider.error, 'Gagal memproses transaksi berulang.');
+      expect(failingProvider.accounts, isNotEmpty);
+    },
+  );
+
   test('budget warning is recorded once per category and month', () async {
     final category = finance.categories.firstWhere(
       (item) => item.type == TxType.expense,
@@ -158,6 +184,100 @@ void main() {
     expect(finance.savedFor(savedGoal.id!), 500);
     expect(finance.balanceOf(account), -500);
   });
+
+  test('transaction balance includes goal withdrawals', () async {
+    final account = finance.accounts.first;
+    final incomeCategory = finance.categories.firstWhere(
+      (item) => item.type == TxType.income,
+    );
+    final expenseCategory = finance.categories.firstWhere(
+      (item) => item.type == TxType.expense,
+    );
+    final today = DateTime.now();
+    expect(
+      await finance.addTransaction(
+        AppTransaction(
+          type: TxType.income,
+          amount: 1000,
+          accountId: account.id!,
+          categoryId: incomeCategory.id,
+          date: today,
+        ),
+      ),
+      isNull,
+    );
+    expect(
+      await finance.saveGoal(Goal(name: 'Dana darurat', targetAmount: 1000)),
+      isNull,
+    );
+    final goal = finance.goals.single;
+    expect(
+      await finance.addDeposit(
+        GoalDeposit(
+          goalId: goal.id!,
+          accountId: account.id!,
+          amount: 500,
+          date: today,
+        ),
+      ),
+      isNull,
+    );
+    expect(
+      await finance.addWithdrawal(
+        GoalWithdrawal(
+          goalId: goal.id!,
+          accountId: account.id!,
+          amount: 300,
+          date: today,
+        ),
+      ),
+      isNull,
+    );
+    expect(finance.balanceOf(account), 800);
+    expect(finance.balanceBeforeTransaction(account, null), 800);
+    expect(
+      await finance.addTransaction(
+        AppTransaction(
+          type: TxType.expense,
+          amount: 100,
+          accountId: account.id!,
+          categoryId: expenseCategory.id,
+          date: today,
+        ),
+      ),
+      isNull,
+    );
+    expect(
+      finance.balanceBeforeTransaction(account, finance.transactions.first.id),
+      800,
+    );
+  });
+
+  test('past goal target dates do not show a monthly contribution', () async {
+    final today = DateTime.now();
+    final goal = Goal(
+      id: 1,
+      name: 'Target lewat',
+      targetAmount: 1000,
+      targetDate: DateTime(today.year, today.month, today.day - 1),
+    );
+    expect(finance.monthlyGoalContribution(goal, from: today), 0);
+  });
+
+  test(
+    'malformed recurring backup rows are skipped instead of aborting',
+    () async {
+      const backup =
+          'Tanggal,Jenis,Kategori,Akun,Nominal,Catatan\n'
+          ',_berulang,,,,'
+          '"{""type"":""invalid""}"';
+
+      final result = await BackupService.importCsv(finance, backup);
+
+      expect(result.imported, 0);
+      expect(result.skipped, 1);
+    },
+  );
 
   test(
     'backup CSV restores data and repeated import does not duplicate it',
@@ -255,4 +375,26 @@ void main() {
       expect(target.deposits, hasLength(1));
     },
   );
+}
+
+class _FailingRecurringDatabase extends DatabaseHelper {
+  _FailingRecurringDatabase({
+    required super.factory,
+    required super.databasePath,
+  });
+
+  @override
+  Future<int> materializeDueRecurring(DateTime throughDate) async {
+    throw _TestDatabaseException('test failure');
+  }
+}
+
+class _TestDatabaseException extends DatabaseException {
+  _TestDatabaseException(super.message);
+
+  @override
+  int? getResultCode() => null;
+
+  @override
+  Object? get result => null;
 }
