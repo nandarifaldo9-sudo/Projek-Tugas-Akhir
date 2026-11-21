@@ -85,10 +85,7 @@ class AccountsScreen extends StatelessWidget {
               'Saldo dihitung otomatis: saldo awal ditambah pemasukan, '
               'ditambah/dikurangi transfer antar akun, lalu dikurangi '
               'pengeluaran dan pergerakan dana target.',
-              style: TextStyle(
-                color: scheme.onSurfaceVariant,
-                fontSize: 12.5,
-              ),
+              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5),
             ),
           ),
         ],

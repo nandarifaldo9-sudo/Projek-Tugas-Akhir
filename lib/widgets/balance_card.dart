@@ -5,10 +5,20 @@ import '../utils/format.dart';
 import 'app_card.dart';
 
 class BalanceCard extends StatelessWidget {
-  const BalanceCard({super.key, required this.total, required this.accounts});
+  const BalanceCard({
+    super.key,
+    required this.total,
+    required this.accounts,
+    this.hidden = false,
+    this.onToggleHidden,
+  });
 
   final int total;
   final List<MapEntry<String, int>> accounts;
+  final bool hidden;
+  final VoidCallback? onToggleHidden;
+
+  String _money(int value) => hidden ? 'Rp ••••••' : rupiah(value);
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +43,19 @@ class BalanceCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (onToggleHidden != null)
+                IconButton(
+                  onPressed: onToggleHidden,
+                  tooltip: hidden ? 'Tampilkan saldo' : 'Sembunyikan saldo',
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(
+                    hidden
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
               Container(
                 width: 36,
                 height: 36,
@@ -53,7 +76,7 @@ class BalanceCard extends StatelessWidget {
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(
-              rupiah(total),
+              _money(total),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 32,
@@ -67,7 +90,7 @@ class BalanceCard extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                for (final a in accounts) _AccountChip(a.key, a.value),
+                for (final a in accounts) _AccountChip(a.key, _money(a.value)),
               ],
             ),
           ],
@@ -78,10 +101,10 @@ class BalanceCard extends StatelessWidget {
 }
 
 class _AccountChip extends StatelessWidget {
-  const _AccountChip(this.name, this.balance);
+  const _AccountChip(this.name, this.balanceText);
 
   final String name;
-  final int balance;
+  final String balanceText;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +115,7 @@ class _AccountChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        '$name  ${rupiah(balance)}',
+        '$name  $balanceText',
         style: const TextStyle(color: Colors.white, fontSize: 13),
       ),
     );

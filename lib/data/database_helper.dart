@@ -122,7 +122,10 @@ class DatabaseHelper {
     ''');
 
     await _createFeatureTables(db);
+    await _seedDefaults(db);
+  }
 
+  Future<void> _seedDefaults(DatabaseExecutor db) async {
     // Data awal: akun Tunai dan Bank, serta kategori bawaan.
     final batch = db.batch();
     for (final name in ['Tunai', 'Bank']) {
@@ -146,6 +149,27 @@ class DatabaseHelper {
       batch.insert('categories', {'name': n, 'type': TxType.income.name});
     }
     await batch.commit(noResult: true);
+  }
+
+  Future<void> deleteAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final table in const [
+        'budget_warnings',
+        'category_budgets',
+        'goal_withdrawals',
+        'deposits',
+        'goals',
+        'transactions',
+        'recurring_rules',
+        'categories',
+        'accounts',
+      ]) {
+        await txn.delete(table);
+      }
+      await txn.delete('sqlite_sequence');
+      await _seedDefaults(txn);
+    });
   }
 
   Future<void> _createFeatureTables(DatabaseExecutor db) async {

@@ -3,6 +3,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/app_settings.dart';
+import '../theme/app_theme.dart';
 import '../utils/auth_error_message.dart';
 import 'app_card.dart';
 
@@ -47,7 +48,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
           : DateTime.now().difference(_backgroundAt!);
       _backgroundAt = null;
       if (settings.appLockEnabled &&
-          elapsed >= const Duration(minutes: 1) &&
+          elapsed >= Duration(seconds: settings.lockTimeoutSeconds) &&
           !_locked) {
         setState(() {
           _locked = true;
@@ -131,18 +132,29 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
                     width: 88,
                     height: 88,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
+                      gradient: const LinearGradient(
+                        colors: [AppColors.navy, AppColors.teal],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.navy.withValues(alpha: 0.18),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
                     child: Icon(
-                      Icons.lock_rounded,
-                      size: 38,
-                      color: Theme.of(context).colorScheme.primary,
+                      Icons.account_balance_wallet_rounded,
+                      size: 40,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Flowly terkunci',
+                    'Selamat datang kembali',
                     style: Theme.of(context).textTheme.headlineSmall
                         ?.copyWith(fontWeight: FontWeight.w700),
                     textAlign: TextAlign.center,

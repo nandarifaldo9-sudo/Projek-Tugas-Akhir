@@ -32,6 +32,24 @@ class FinanceProvider extends ChangeNotifier {
   List<RecurringRule> get recurringRules =>
       UnmodifiableListView(_recurringRules);
 
+  int budgetWarnPercent = 80;
+  int? defaultAccountId;
+
+  void applySettings({
+    required int budgetWarnPercent,
+    required int? defaultAccountId,
+  }) {
+    this.budgetWarnPercent = budgetWarnPercent;
+    this.defaultAccountId = defaultAccountId;
+  }
+
+  Account? get defaultAccount {
+    for (final a in _accounts) {
+      if (a.id == defaultAccountId) return a;
+    }
+    return _accounts.isEmpty ? null : _accounts.first;
+  }
+
   bool loading = true;
   String? error;
 
@@ -488,6 +506,26 @@ class FinanceProvider extends ChangeNotifier {
     return null;
   }
 
+  Future<String?> resetAllData() async {
+    try {
+      await _db.deleteAllData();
+    } on DatabaseException {
+      return 'Gagal menghapus data.';
+    }
+    _newBudgetAlerts.clear();
+    await _refresh(
+      accounts: true,
+      categories: true,
+      transactions: true,
+      goals: true,
+      deposits: true,
+      withdrawals: true,
+      budgets: true,
+      recurringRules: true,
+    );
+    return null;
+  }
+
   Future<String?> saveRecurringRule(RecurringRule rule) async {
     if (rule.amount <= 0) return 'Nominal harus lebih dari 0.';
     final error = _validateTransaction(
@@ -597,7 +635,7 @@ class FinanceProvider extends ChangeNotifier {
     var changed = false;
     for (final budget in _budgets) {
       final spent = spentForCategory(budget.categoryId, now);
-      if (spent < (budget.amount * 80 + 99) ~/ 100) continue;
+      if (spent < (budget.amount * budgetWarnPercent + 99) ~/ 100) continue;
       if (await _db.hasBudgetWarning(budget.categoryId, month)) continue;
       await _db.markBudgetWarning(budget.categoryId, month);
       _newBudgetAlerts.add(budget.categoryId);

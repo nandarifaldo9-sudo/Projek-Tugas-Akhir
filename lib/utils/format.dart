@@ -1,22 +1,20 @@
 import 'package:intl/intl.dart';
 
-final _rupiah = NumberFormat.currency(
-  locale: 'id_ID',
-  symbol: 'Rp ',
+String _locale() => Intl.defaultLocale == 'en_US' ? 'en_US' : 'id_ID';
+
+String rupiah(int value) => NumberFormat.currency(
+  locale: _locale(),
+  symbol: Intl.defaultLocale == 'en_US' ? 'Rp ' : 'Rp ',
   decimalDigits: 0,
-);
+).format(value);
 
-final _tanggal = DateFormat('d MMM yyyy', 'id_ID');
-final _tanggalLengkap = DateFormat('EEEE, d MMMM yyyy', 'id_ID');
-final _bulanTahun = DateFormat('MMMM yyyy', 'id_ID');
-final _bulanSingkat = DateFormat('MMM', 'id_ID');
+String tanggal(DateTime date) =>
+    DateFormat('d MMM yyyy', _locale()).format(date);
 
-String rupiah(int value) => _rupiah.format(value);
+String tanggalLengkap(DateTime date) =>
+    DateFormat('EEEE, d MMMM yyyy', _locale()).format(date);
 
-String tanggal(DateTime date) => _tanggal.format(date);
+String bulanTahun(DateTime date) =>
+    DateFormat('MMMM yyyy', _locale()).format(date);
 
-String tanggalLengkap(DateTime date) => _tanggalLengkap.format(date);
-
-String bulanTahun(DateTime date) => _bulanTahun.format(date);
-
-String bulanSingkat(DateTime date) => _bulanSingkat.format(date);
+String bulanSingkat(DateTime date) => DateFormat('MMM', _locale()).format(date);

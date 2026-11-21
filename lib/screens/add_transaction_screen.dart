@@ -49,9 +49,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       _amountCtrl.text = e.amount.toString();
       _noteCtrl.text = e.note;
     } else {
-      final accounts = context.read<FinanceProvider>().accounts;
-      if (accounts.isNotEmpty) _accountId = accounts.first.id;
-      if (accounts.length > 1) _toAccountId = accounts[1].id;
+      final finance = context.read<FinanceProvider>();
+      _accountId = finance.defaultAccount?.id;
+      for (final a in finance.accounts) {
+        if (a.id != _accountId) {
+          _toAccountId = a.id;
+          break;
+        }
+      }
     }
   }
 

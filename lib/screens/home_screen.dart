@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/models.dart';
+import '../providers/app_settings.dart';
 import '../providers/finance_provider.dart';
 import '../theme/app_theme.dart';
 import '../utils/format.dart';
@@ -35,6 +36,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = context.watch<FinanceProvider>();
+    final settings = context.watch<AppSettings>();
     final scheme = Theme.of(context).colorScheme;
 
     Widget body;
@@ -79,6 +81,9 @@ class HomeScreen extends StatelessWidget {
             accounts: [
               for (final a in f.accounts) MapEntry(a.name, f.balanceOf(a)),
             ],
+            hidden: settings.hideBalance,
+            onToggleHidden: () =>
+                settings.setHideBalance(!settings.hideBalance),
           ),
           const SizedBox(height: 12),
           Row(

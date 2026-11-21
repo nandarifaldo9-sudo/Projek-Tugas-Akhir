@@ -46,6 +46,7 @@ dependencies:
   file_picker: 13.4.0
   local_auth: ^3.0.2
   shared_preferences: ^2.5.6
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:

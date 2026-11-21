@@ -97,7 +97,7 @@ class BudgetScreen extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
               'Peringatan muncul sekali per kategori setiap bulan saat '
-              'pengeluaran mencapai 80% anggaran.',
+              'pengeluaran mencapai ${finance.budgetWarnPercent}% anggaran.',
               style: TextStyle(color: scheme.onSurfaceVariant),
             ),
           ),
@@ -106,6 +106,7 @@ class BudgetScreen extends StatelessWidget {
               category: category,
               limit: finance.budgetFor(category.id!),
               spent: finance.spentForCategory(category.id!, now),
+              warnPercent: finance.budgetWarnPercent,
               onEdit: () => _editBudget(context, finance, category),
               onDelete: () => _deleteBudget(context, finance, category),
             ),
@@ -120,6 +121,7 @@ class _BudgetCard extends StatelessWidget {
     required this.category,
     required this.limit,
     required this.spent,
+    required this.warnPercent,
     required this.onEdit,
     required this.onDelete,
   });
@@ -127,6 +129,7 @@ class _BudgetCard extends StatelessWidget {
   final Category category;
   final int limit;
   final int spent;
+  final int warnPercent;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -136,7 +139,7 @@ class _BudgetCard extends StatelessWidget {
     final ratio = limit == 0 ? 0.0 : spent / limit;
     final color = ratio >= 1
         ? AppColors.expense
-        : ratio >= 0.8
+        : ratio >= warnPercent / 100
         ? const Color(0xFFE6A23C)
         : AppColors.teal;
     final status = limit == 0
@@ -145,7 +148,7 @@ class _BudgetCard extends StatelessWidget {
         ? 'Melebihi ${rupiah(spent - limit)}'
         : ratio == 1
         ? 'Anggaran habis'
-        : ratio >= 0.8
+        : ratio >= warnPercent / 100
         ? 'Hampir habis'
         : 'Sisa ${rupiah(limit - spent)}';
 

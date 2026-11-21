@@ -77,7 +77,11 @@ class _MainShellState extends State<MainShell> with WidgetsBindingObserver {
       if (alerts.isEmpty) return;
       final names = alerts.map(finance.categoryName).join(', ');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pengeluaran mencapai 80% anggaran: $names')),
+        SnackBar(
+          content: Text(
+            'Pengeluaran mencapai ${finance.budgetWarnPercent}% anggaran: $names',
+          ),
+        ),
       );
     });
     final screens = <Widget>[

@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/finance_provider.dart';
+import '../providers/app_settings.dart';
 import '../services/export_service.dart';
 import '../services/backup_service.dart';
 import '../theme/app_theme.dart';
@@ -39,14 +41,30 @@ class ProfileScreen extends StatelessWidget {
 
   Future<void> _exportBackup(BuildContext context) async {
     final finance = context.read<FinanceProvider>();
+    final settings = context.read<AppSettings>();
     final messenger = ScaffoldMessenger.of(context);
     try {
       await ExportService.shareBackupCsv(finance);
+      await settings.markBackupNow();
     } catch (error) {
       messenger.showSnackBar(
         SnackBar(content: Text('Gagal membuat backup: $error')),
       );
     }
+  }
+
+  Future<void> _showAbout(BuildContext context) async {
+    final package = await PackageInfo.fromPlatform();
+    if (!context.mounted) return;
+    showAboutDialog(
+      context: context,
+      applicationName: 'Flowly',
+      applicationVersion: '${package.version}+${package.buildNumber}',
+      children: const [
+        SizedBox(height: 8),
+        Text('Pencatat keuangan offline. Data tersimpan di perangkat.'),
+      ],
+    );
   }
 
   Future<void> _restoreBackup(BuildContext context) async {
@@ -195,7 +213,7 @@ class ProfileScreen extends StatelessWidget {
               tint: AppColors.tealTint,
             ),
             title: 'Pengaturan',
-            subtitle: 'Tema & kunci aplikasi',
+            subtitle: 'Tampilan, privasi, anggaran & data',
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () => _push(context, const SettingsScreen()),
           ),
@@ -258,15 +276,7 @@ class ProfileScreen extends StatelessWidget {
             ),
             title: 'Tentang Flowly',
             trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () => showAboutDialog(
-              context: context,
-              applicationName: 'Flowly',
-              applicationVersion: '1.0.0',
-              children: const [
-                SizedBox(height: 8),
-                Text('Pencatat keuangan offline. Data tersimpan di perangkat.'),
-              ],
-            ),
+            onTap: () => _showAbout(context),
           ),
         ],
       ),
