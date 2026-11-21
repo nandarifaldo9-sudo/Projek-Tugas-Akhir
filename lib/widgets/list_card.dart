@@ -34,6 +34,7 @@ class ListCard extends StatelessWidget {
     this.subtitle,
     this.trailing,
     this.onTap,
+    this.titleColor,
   });
 
   final Widget leading;
@@ -41,6 +42,7 @@ class ListCard extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
   final VoidCallback? onTap;
+  final Color? titleColor;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +74,10 @@ class ListCard extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: titleColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
